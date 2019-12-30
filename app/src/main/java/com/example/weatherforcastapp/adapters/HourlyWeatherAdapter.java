@@ -64,6 +64,7 @@ public class HourlyWeatherAdapter extends RecyclerView.Adapter<HourlyWeatherAdap
             int imageResource = context.getResources().getIdentifier(uri, null, context.getPackageName());
             Drawable res = context.getResources().getDrawable(imageResource);
             holder.icon.setImageDrawable(res);
+
         } catch (Exception e) {
             e.printStackTrace();
         }

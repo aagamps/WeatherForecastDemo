@@ -6,8 +6,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,11 +22,19 @@ import com.example.weatherforcastapp.adapters.CityListAdapter;
 import com.example.weatherforcastapp.adapters.HourlyWeatherAdapter;
 import com.example.weatherforcastapp.api.ApiInterface;
 import com.example.weatherforcastapp.api.RetrofitClient;
+import com.example.weatherforcastapp.model.HourlyList;
 import com.example.weatherforcastapp.model.HourlyResponse;
 import com.example.weatherforcastapp.model.WeatherResponse;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import retrofit2.Call;
 import retrofit2.Callback;
+
+import static com.example.weatherforcastapp.R.color.colorPrimaryLight;
 
 public class WeatherDetailsActivity extends AppCompatActivity {
 
@@ -31,8 +44,14 @@ public class WeatherDetailsActivity extends AppCompatActivity {
     private static String TAG = "WeatherDetailsActivity";
     private WeatherResponse weatherResponse;
     private HourlyResponse hourlyResponse;
+    private List<HourlyList> todayList = new ArrayList<>();
+    private List<HourlyList> tomorrowList = new ArrayList<>();
     private RecyclerView rvhourlyTemp;
     private HourlyWeatherAdapter adapter;
+    private Button btnToday, btnTomorrow;
+    private String icon;
+    private ImageView ivIcon;
+    private View viewLine;
 
     private TextView cityName, temp, weatherMain, weatherDescripton, pressure, humidity, tempUp, tempDown, windSpeed, windDegree;
 
@@ -66,10 +85,37 @@ public class WeatherDetailsActivity extends AppCompatActivity {
         tempDown = findViewById(R.id.tempDown);
         windSpeed = findViewById(R.id.windSpeed);
         windDegree = findViewById(R.id.windDegree);
+        btnToday = findViewById(R.id.btnToday);
+        btnTomorrow = findViewById(R.id.btnTomorrow);
+        ivIcon = findViewById(R.id.ivIcon);
+        viewLine = findViewById(R.id.viewLine);
+        btnToday.setBackgroundColor(getResources().getColor(R.color.colorPrimaryLight));
 
         rvhourlyTemp = findViewById(R.id.rvhourlyTemp);
         LinearLayoutManager llm = new LinearLayoutManager(this);
         rvhourlyTemp.setLayoutManager(llm);
+        btnToday.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (todayList != null && todayList.size() > 0) {
+                    adapter = new HourlyWeatherAdapter(WeatherDetailsActivity.this, todayList);
+                    rvhourlyTemp.setAdapter(adapter);
+                    btnToday.setBackgroundColor(getResources().getColor(R.color.colorPrimaryLight));
+                    btnTomorrow.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+                }
+            }
+        });
+        btnTomorrow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (tomorrowList != null && tomorrowList.size() > 0) {
+                    adapter = new HourlyWeatherAdapter(WeatherDetailsActivity.this, tomorrowList);
+                    rvhourlyTemp.setAdapter(adapter);
+                    btnTomorrow.setBackgroundColor(getResources().getColor(R.color.colorPrimaryLight));
+                    btnToday.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+                }
+            }
+        });
 
 
     }
@@ -100,6 +146,7 @@ public class WeatherDetailsActivity extends AppCompatActivity {
         for (int i = 0; i < weatherResponse.getWeather().size(); i++) {
             weatherMain.setText(weatherResponse.getWeather().get(i).getMain());
             weatherDescripton.setText(weatherResponse.getWeather().get(i).getDescription());
+            icon = weatherResponse.getWeather().get(i).getIcon();
         }
         pressure.setText(weatherResponse.getMain().getPressure().toString() + " Pa");
         humidity.setText(weatherResponse.getMain().getHumidity().toString());
@@ -107,6 +154,11 @@ public class WeatherDetailsActivity extends AppCompatActivity {
         tempDown.setText(weatherResponse.getMain().getTempMin().toString() + "°");
         windSpeed.setText(weatherResponse.getWind().getSpeed().toString() + " km/h");
         windDegree.setText(weatherResponse.getWind().getDeg().toString() + "°");
+
+        String uri = "@drawable/icon" + icon;
+        int imageResource = getResources().getIdentifier(uri, null, this.getPackageName());
+        Drawable res = getResources().getDrawable(imageResource);
+        ivIcon.setImageDrawable(res);
 
 
     }
@@ -153,8 +205,33 @@ public class WeatherDetailsActivity extends AppCompatActivity {
                 Log.i(TAG, "Responce= " + hourlyResponse);
 
                 if (hourlyResponse != null) {
-                    adapter = new HourlyWeatherAdapter(WeatherDetailsActivity.this, hourlyResponse.getList());
-                    rvhourlyTemp.setAdapter(adapter);
+                    try {
+                        Date date;
+                        String dateString, firstDate = "", secondDate = "";
+                        int j = 0;
+                        for (int i = 0; i < hourlyResponse.getList().size(); i++) {
+                            SimpleDateFormat input = new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss");
+                            SimpleDateFormat output = new SimpleDateFormat("yyyy-MM-dd");
+                            date = input.parse(hourlyResponse.getList().get(i).getDtTxt());
+                            dateString = output.format(date);
+                            if (i == 0) {
+                                firstDate = dateString;
+                            }
+                            if (firstDate.equals(dateString)) {
+                                todayList.add(hourlyResponse.getList().get(i));
+                            } else if (j == 0) {
+                                j = 1;
+                                secondDate = dateString;
+                            }
+                            if (secondDate.equals(dateString)) {
+                                tomorrowList.add(hourlyResponse.getList().get(i));
+                            }
+                        }
+                        adapter = new HourlyWeatherAdapter(WeatherDetailsActivity.this, todayList);
+                        rvhourlyTemp.setAdapter(adapter);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
 
             }

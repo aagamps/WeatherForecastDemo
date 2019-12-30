@@ -101,8 +101,8 @@ public class CityListAdapter extends RecyclerView.Adapter<CityListAdapter.ViewHo
     public class ViewHolder extends RecyclerView.ViewHolder {
 
         private CardView cvCityList;
-        private TextView tvCityName, next;
-        private ImageView icon, delete;
+        private TextView tvCityName;
+        private ImageView icon, delete, next;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
